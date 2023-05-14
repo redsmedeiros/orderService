@@ -23,12 +23,12 @@ import lombok.Setter;
 public class Order {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long ig;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     private String orderNumber;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderLineItems> OrderLineItemsList;
     
 }
