@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriBuilder;
 
 import com.orderService.dto.OrderLineItemsDto;
 import com.orderService.dto.OrderRequest;
@@ -19,6 +21,8 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
 
+    private final WebClient webClient;
+
     public void placeOrder(OrderRequest orderRequest){
 
         Order order = new Order();
@@ -29,7 +33,20 @@ public class OrderService {
 
         order.setOrderLineItemsList(orderLineItems);
 
-        orderRepository.save(order);
+        List<String> skuCodes = order.getOrderLineItemsList().stream().map(orderLineItem -> orderLineItem.getSkuCode()).toList();
+
+        //call inventory service
+
+        Boolean result = webClient.get().uri("http//localhost:8082/api/inventory", UriBuilder -> UriBuilder.queryParam("skuCode", skuCodes).build())
+            .retrieve()
+            .bodyToMono(Boolean.class)
+            .block();
+
+        if(result){
+            orderRepository.save(order);
+        }else{
+            throw new IllegalArgumentException("Product is not in stock");
+        }
     }
 
     private OrderLineItems mapToDto(OrderLineItemsDto orderLineItemsDto){
